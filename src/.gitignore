@@ -1,8 +1,16 @@
 *.log
 .DS_Store
+
+# =========================
+# Environment
+# =========================
 .env
 .env.backup
 .env.production
+
+# =========================
+# IDE
+# =========================
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -12,16 +20,50 @@
 /.phpunit.cache
 /.vscode
 /.zed
+
+# =========================
+# Composer
+# =========================
+/vendor
 /auth.json
+_ide_helper.php
+
+# =========================
+# Node.js
+# =========================
 /node_modules
+
+# =========================
+# Build
+# =========================
 /public/build
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
+
+# =========================
+# Storage
+# =========================
 /storage/*.key
 /storage/pail
-/vendor
-_ide_helper.php
+
+# =========================
+# Laravel
+# =========================
 Homestead.json
 Homestead.yaml
+
+# =========================
+# Windows
+# =========================
 Thumbs.db
+
+# =========================
+# AI Project
+# =========================
+coverage/
+coverage.xml
+
+*.pem
+*.crt
+*.key
