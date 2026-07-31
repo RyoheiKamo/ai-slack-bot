@@ -15,13 +15,13 @@ class SlackService
 
     public function handleEvent(Request $request)
     {
-        // if (! $this->signatureService->verify(
-        //     $request->header('X-Slack-Request-Timestamp'),
-        //     $request->header('X-Slack-Signature'),
-        //     $request->getContent()
-        // )) {
-        //     abort(401);
-        // }
+        if (! $this->signatureService->verify(
+            $request->header('X-Slack-Request-Timestamp'),
+            $request->header('X-Slack-Signature'),
+            $request->getContent()
+        )) {
+            abort(401);
+        }
 
         $payload = $request->all();
 
