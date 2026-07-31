@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Services\SlackMessageService;
 use App\Services\SlackSignatureService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SlackService
 {
