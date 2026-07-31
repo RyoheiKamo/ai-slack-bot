@@ -2,19 +2,18 @@
 
 namespace App\Services;
 
-use App\Services\SlackMessageService;
-use App\Services\SlackSignatureService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 
 class SlackService
 {
     public function __construct(
-        private readonly SlackMessageService $messageService,
-        private readonly SlackSignatureService $signatureService
+        private readonly SlackSignatureService $signatureService,
+        private readonly SlackEventService $eventService
     ) {}
 
-    public function handleEvent(Request $request)
+    public function handleEvent(Request $request): Response
     {
         if (! $this->signatureService->verify(
             $request->header('X-Slack-Request-Timestamp'),
@@ -26,44 +25,24 @@ class SlackService
 
         $payload = $request->all();
 
-        Log::info('Slack Event', $payload);
-
         if (($payload['type'] ?? null) === 'url_verification') {
-            return response($payload['challenge'], 200);
+            return response(
+                $payload['challenge'] ?? '',
+                200
+            );
         }
 
-        $event = $payload['event'] ?? [];
-
-        if (($event['type'] ?? null) !== 'app_mention') {
-            return response()->json(['ok' => true]);
+        if (($payload['type'] ?? null) !== 'event_callback') {
+            return $this->successResponse();
         }
 
-        if (isset($event['bot_id'])) {
-            return response()->json(['ok' => true]);
-        }
+        $this->eventService->handle($payload);
 
-        $channel = $event['channel'] ?? null;
-        $threadTs = $event['thread_ts'] ?? $event['ts'] ?? null;
-
-        if (!$channel || !$threadTs) {
-            return response()->json(['ok' => true]);
-        }
-
-        $text = $this->removeBotMention($event['text'] ?? '');
-
-        $this->messageService->sendMessage(
-            $channel,
-            "受信しました: {$text}",
-            $threadTs
-        );
-
-        return response()->json(['ok' => true]);
+        return $this->successResponse();
     }
 
-    private function removeBotMention(string $text): string
+    private function successResponse(): JsonResponse
     {
-        return trim(
-            preg_replace('/<@[A-Z0-9]+>/', '', $text) ?? $text
-        );
+        return response()->json(['ok' => true]);
     }
 }
