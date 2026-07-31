@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
+use App\Services\SlackMessageService;
 use App\Services\SlackSignatureService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class SlackService
 {
     public function __construct(
+        private readonly SlackMessageService $messageService,
         private readonly SlackSignatureService $signatureService
     ) {}
 
@@ -50,17 +50,11 @@ class SlackService
 
         $text = $this->removeBotMention($event['text'] ?? '');
 
-        $response = Http::withToken(config('services.slack.bot_token'))
-            ->post('https://slack.com/api/chat.postMessage', [
-                'channel' => $channel,
-                'thread_ts' => $threadTs,
-                'text' => "受信しました: {$text}",
-            ]);
-
-        Log::info('Slack API response', [
-            'status' => $response->status(),
-            'body' => $response->json(),
-        ]);
+        $this->messageService->sendMessage(
+            $channel,
+            "受信しました: {$text}",
+            $threadTs
+        );
 
         return response()->json(['ok' => true]);
     }
