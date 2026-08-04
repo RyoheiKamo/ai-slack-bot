@@ -7,11 +7,28 @@ use Illuminate\Support\Facades\Log;
 class SlackEventService
 {
     public function __construct(
-        private readonly SlackMessageService $messageService
+        private readonly SlackMessageService $messageService,
+        private readonly SlackEventDeduplicationService $deduplicationService
     ) {}
 
     public function handle(array $payload): void
     {
+        $eventId = $payload['event_id'] ?? null;
+
+        if (! is_string($eventId) || $eventId === '') {
+            Log::warning('Slack event ID is missing');
+
+            return;
+        }
+
+        if (! $this->deduplicationService->acquire($eventId)) {
+            Log::info('Duplicate Slack event skipped', [
+                'event_id' => $eventId,
+            ]);
+
+            return;
+        }
+
         $event = $payload['event'] ?? [];
 
         Log::info('Slack Event received', [
