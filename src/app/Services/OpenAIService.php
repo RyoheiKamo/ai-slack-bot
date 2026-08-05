@@ -51,13 +51,16 @@ class OpenAIService
         }
 
         if (! $response->successful()) {
+            $errorCode = $response->json('error.code');
+
             Log::error('OpenAI API request failed', [
                 'status' => $response->status(),
+                'error_code' => $errorCode,
                 'error' => $response->json('error'),
             ]);
 
             throw new RuntimeException(
-                'OpenAI APIからエラーが返されました。'
+                $this->createExceptionMessage($errorCode)
             );
         }
 
@@ -110,5 +113,32 @@ class OpenAIService
         }
 
         return trim(implode("\n", $texts));
+    }
+
+    /**
+     * OpenAI APIエラーコードに対応するユーザー向けメッセージを返却する。
+     */
+    private function createExceptionMessage(?string $errorCode): string
+    {
+        return match ($errorCode) {
+            'insufficient_quota',
+            'credit_balance_exhausted'
+            => '現在OpenAI APIの利用枠が不足しています。管理者へお問い合わせください。',
+
+            'invalid_api_key'
+            => 'OpenAI APIキーが正しく設定されていません。管理者へお問い合わせください。',
+
+            'rate_limit_exceeded'
+            => '現在アクセスが集中しています。しばらくしてから再度お試しください。',
+
+            'context_length_exceeded'
+            => '送信内容が長すぎます。入力内容を短くして再度お試しください。',
+
+            'model_not_found'
+            => '指定されたAIモデルが利用できません。管理者へお問い合わせください。',
+
+            default
+            => 'OpenAI APIで予期しないエラーが発生しました。しばらくしてから再度お試しください。',
+        };
     }
 }

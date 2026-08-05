@@ -65,13 +65,20 @@ class SlackEventService
 
         try {
             $reply = $this->openAIService->generateReply($text);
-        } catch (\Throwable $e) {
-            Log::error('AI reply generation failed', [
+        } catch (\RuntimeException $e) {
+            Log::warning('OpenAI business error', [
                 'event_id' => $eventId,
                 'message' => $e->getMessage(),
             ]);
 
-            $reply = '申し訳ありません。AIから回答を取得できませんでした。';
+            $reply = $e->getMessage();
+        } catch (\Throwable $e) {
+            Log::error('Unexpected AI error', [
+                'event_id' => $eventId,
+                'message' => $e->getMessage(),
+            ]);
+
+            $reply = 'システムエラーが発生しました。管理者へお問い合わせください。';
         }
 
         $this->messageService->sendMessage(
