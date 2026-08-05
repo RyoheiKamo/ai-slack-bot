@@ -8,7 +8,8 @@ class SlackEventService
 {
     public function __construct(
         private readonly SlackMessageService $messageService,
-        private readonly SlackEventDeduplicationService $deduplicationService
+        private readonly SlackEventDeduplicationService $deduplicationService,
+        private readonly OpenAIService $openAIService
     ) {}
 
     public function handle(array $payload): void
@@ -62,9 +63,20 @@ class SlackEventService
 
         $text = $this->removeBotMention($event['text'] ?? '');
 
+        try {
+            $reply = $this->openAIService->generateReply($text);
+        } catch (\Throwable $e) {
+            Log::error('AI reply generation failed', [
+                'event_id' => $eventId,
+                'message' => $e->getMessage(),
+            ]);
+
+            $reply = '申し訳ありません。AIから回答を取得できませんでした。';
+        }
+
         $this->messageService->sendMessage(
             $channel,
-            "受信しました: {$text}",
+            $reply,
             $threadTs
         );
     }

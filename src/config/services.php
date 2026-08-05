@@ -40,4 +40,9 @@ return [
         'signing_secret' => env('SLACK_SIGNING_SECRET'),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-5.6'),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 30),
+    ],
 ];
