@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -13,14 +12,14 @@ class OpenAIService
     private const ENDPOINT = 'https://api.openai.com/v1/responses';
 
     /**
-     * OpenAIへ質問し、生成されたテキストを返す。
+     * 会話履歴をOpenAIへ送信し、生成されたテキストを返す。
+     *
+     * @param array<int, array{role: string, content: string}> $messages
      */
-    public function generateReply(string $message): string
+    public function generateReply(array $messages): string
     {
-        $message = trim($message);
-
-        if ($message === '') {
-            throw new RuntimeException('OpenAIへ送信するメッセージが空です。');
+        if ($messages === []) {
+            throw new RuntimeException('OpenAIへ送信する会話履歴が空です。');
         }
 
         $apiKey = config('services.openai.api_key');
@@ -37,7 +36,7 @@ class OpenAIService
                 ->post(self::ENDPOINT, [
                     'model' => config('services.openai.model'),
                     'instructions' => 'あなたはSlack上で利用されるアシスタントです。簡潔で分かりやすい日本語で回答してください。',
-                    'input' => $message,
+                    'input' => $messages,
                 ]);
         } catch (ConnectionException $e) {
             Log::error('OpenAI API connection failed', [

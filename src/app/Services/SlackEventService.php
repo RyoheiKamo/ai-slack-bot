@@ -7,9 +7,10 @@ use Illuminate\Support\Facades\Log;
 class SlackEventService
 {
     public function __construct(
-        private readonly SlackMessageService $messageService,
+        private readonly ChatHistoryService $chatHistoryService,
+        private readonly OpenAIService $openAIService,
         private readonly SlackEventDeduplicationService $deduplicationService,
-        private readonly OpenAIService $openAIService
+        private readonly SlackMessageService $messageService,
     ) {}
 
     public function handle(array $payload): void
@@ -63,8 +64,25 @@ class SlackEventService
 
         $text = $this->removeBotMention($event['text'] ?? '');
 
+        $this->chatHistoryService->addUserMessage(
+            $channel,
+            $threadTs,
+            $text
+        );
+
+        $history = $this->chatHistoryService->getHistory(
+            $channel,
+            $threadTs
+        );
+
         try {
-            $reply = $this->openAIService->generateReply($text);
+            $reply = $this->openAIService->generateReply($history);
+
+            $this->chatHistoryService->addAssistantMessage(
+                $channel,
+                $threadTs,
+                $reply
+            );
         } catch (\RuntimeException $e) {
             Log::warning('OpenAI business error', [
                 'event_id' => $eventId,
