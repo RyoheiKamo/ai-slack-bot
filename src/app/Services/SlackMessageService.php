@@ -29,6 +29,7 @@ class SlackMessageService
 
         if (! $response->successful() || $response->json('ok') !== true) {
             Log::error('Slack message sending failed', [
+                'channel' => $channel,
                 'status' => $response->status(),
                 'error' => $response->json('error'),
                 'body' => $response->json(),
