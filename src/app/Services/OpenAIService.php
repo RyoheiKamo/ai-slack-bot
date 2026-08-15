@@ -35,7 +35,7 @@ class OpenAIService
                 ->retry(2, 500, throw: false)
                 ->post(self::ENDPOINT, [
                     'model' => config('services.openai.model'),
-                    'instructions' => 'あなたはSlack上で利用されるアシスタントです。簡潔で分かりやすい日本語で回答してください。',
+                    'instructions' => config('openai.instructions'),
                     'input' => $messages,
                 ]);
         } catch (ConnectionException $e) {
