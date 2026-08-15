@@ -21,22 +21,7 @@ class SlackEventService
             return;
         }
 
-        if (! $this->deduplicationService->acquire($eventId)) {
-            Log::info('Duplicate Slack event skipped', [
-                'event_id' => $eventId,
-            ]);
-
-            return;
-        }
-
         $event = $payload['event'] ?? [];
-
-        Log::info('Slack Event received', [
-            'event_id' => $payload['event_id'] ?? null,
-            'type' => $event['type'] ?? null,
-            'channel' => $event['channel'] ?? null,
-            'user' => $event['user'] ?? null,
-        ]);
 
         if (($event['type'] ?? null) !== 'app_mention') {
             return;
@@ -51,15 +36,35 @@ class SlackEventService
         $threadTs = $event['thread_ts'] ?? $event['ts'] ?? null;
         $text = $event['text'] ?? '';
 
-        if (! is_string($channel) || ! is_string($threadTs)) {
+        if (
+            ! is_string($channel)
+            || ! is_string($threadTs)
+            || ! is_string($text)
+        ) {
             Log::warning('Slack event missing required fields', [
-                'event_id' => $payload['event_id'] ?? null,
+                'event_id' => $eventId,
                 'channel' => $channel,
                 'thread_ts' => $threadTs,
             ]);
 
             return;
         }
+
+        // 実際に処理するイベントに対して重複チェック
+        if (! $this->deduplicationService->acquire($eventId)) {
+            Log::info('Duplicate Slack event skipped', [
+                'event_id' => $eventId,
+            ]);
+
+            return;
+        }
+
+        Log::info('Slack Event received', [
+            'event_id' => $eventId,
+            'type' => $event['type'],
+            'channel' => $channel,
+            'user' => $event['user'] ?? null,
+        ]);
 
         ProcessSlackMessageJob::dispatch(
             $text,
