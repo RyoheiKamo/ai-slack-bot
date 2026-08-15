@@ -163,4 +163,43 @@ class OpenAIServiceTest extends TestCase
             ],
         ]);
     }
+
+    public function test_openai_uses_configured_instructions(): void
+    {
+        Config::set(
+            'openai.instructions',
+            'テスト用システムプロンプト'
+        );
+
+        Http::fake([
+            'https://api.openai.com/v1/responses' =>
+            Http::response([
+                'output' => [
+                    [
+                        'type' => 'message',
+                        'content' => [
+                            [
+                                'type' => 'output_text',
+                                'text' => 'OK',
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $service = app(OpenAIService::class);
+
+        $service->generateReply([
+            [
+                'role' => 'user',
+                'content' => 'PHPとは？',
+            ],
+        ]);
+
+        Http::assertSent(function ($request) {
+            return $request['instructions']
+                === 'テスト用システムプロンプト';
+        });
+    }
 }
