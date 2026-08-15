@@ -54,6 +54,7 @@ class OpenAIService
 
             Log::error('OpenAI API request failed', [
                 'status' => $response->status(),
+                'request_id' => $response->header('x-request-id'),
                 'error_code' => $errorCode,
                 'error' => $response->json('error'),
             ]);
@@ -78,7 +79,12 @@ class OpenAIService
 
         Log::info('OpenAI response generated', [
             'response_id' => $response->json('id'),
+            'request_id' => $response->header('x-request-id'),
             'model' => $response->json('model'),
+            'input_tokens' => $response->json('usage.input_tokens'),
+            'output_tokens' => $response->json('usage.output_tokens'),
+            'total_tokens' => $response->json('usage.total_tokens'),
+            'processing_ms' => $response->header('openai-processing-ms'),
         ]);
 
         return $reply;
