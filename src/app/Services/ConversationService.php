@@ -21,10 +21,27 @@ class ConversationService
         string $eventId
     ): void {
         try {
+            $message = $this->removeBotMention($text);
+
+            if ($message === '/reset') {
+                $this->chatHistoryService->clearHistory(
+                    $channel,
+                    $threadTs
+                );
+
+                $this->slackMessageService->sendMessage(
+                    $channel,
+                    'このスレッドの会話履歴をリセットしました。',
+                    $threadTs
+                );
+
+                return;
+            }
+
             $this->chatHistoryService->addUserMessage(
                 $channel,
                 $threadTs,
-                $this->removeBotMention($text)
+                $message
             );
 
             $history = $this->chatHistoryService->getHistory(

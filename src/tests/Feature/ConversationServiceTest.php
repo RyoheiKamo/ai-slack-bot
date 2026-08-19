@@ -259,4 +259,73 @@ class ConversationServiceTest extends TestCase
 
         $this->assertTrue(true);
     }
+
+    public function test_process_clears_history_when_reset_command_is_received(): void
+    {
+        $text = '<@U999> /reset';
+        $channel = 'C123';
+        $threadTs = '123.456';
+        $eventId = 'Ev123';
+
+        $chatHistoryService = Mockery::mock(
+            ChatHistoryService::class
+        );
+
+        $historyLimiter = Mockery::mock(
+            ConversationHistoryLimiter::class
+        );
+
+        $openAIService = Mockery::mock(
+            OpenAIService::class
+        );
+
+        $slackMessageService = Mockery::mock(
+            SlackMessageService::class
+        );
+
+        $chatHistoryService
+            ->shouldReceive('clearHistory')
+            ->once()
+            ->with(
+                $channel,
+                $threadTs
+            );
+
+        $chatHistoryService
+            ->shouldNotReceive('addUserMessage');
+
+        $chatHistoryService
+            ->shouldNotReceive('getHistory');
+
+        $historyLimiter
+            ->shouldNotReceive('limit');
+
+        $openAIService
+            ->shouldNotReceive('generateReply');
+
+        $slackMessageService
+            ->shouldReceive('sendMessage')
+            ->once()
+            ->with(
+                $channel,
+                'このスレッドの会話履歴をリセットしました。',
+                $threadTs
+            );
+
+        $service = new ConversationService(
+            $chatHistoryService,
+            $historyLimiter,
+            $openAIService,
+            $slackMessageService
+        );
+
+        $service->process(
+            $text,
+            $channel,
+            $threadTs,
+            $eventId
+        );
+
+        $this->assertTrue(true);
+    }
 }
