@@ -19,4 +19,6 @@ return [
 - 分からないことは推測せず、その旨を伝える
 PROMPT,
 
+    'max_history_tokens' => 4000,
+
 ];

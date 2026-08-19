@@ -9,6 +9,7 @@ class ConversationService
 {
     public function __construct(
         private readonly ChatHistoryService $chatHistoryService,
+        private readonly ConversationHistoryLimiter $historyLimiter,
         private readonly OpenAIService $openAIService,
         private readonly SlackMessageService $slackMessageService
     ) {}
@@ -29,6 +30,10 @@ class ConversationService
             $history = $this->chatHistoryService->getHistory(
                 $channel,
                 $threadTs
+            );
+
+            $history = $this->historyLimiter->limit(
+                $history
             );
 
             $reply = $this->openAIService->generateReply(
