@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\ChatHistoryService;
+use App\Services\ConversationHistoryLimiter;
 use App\Services\ConversationService;
 use App\Services\OpenAIService;
 use App\Services\SlackMessageService;
@@ -38,6 +39,7 @@ class ConversationServiceTest extends TestCase
         $reply = 'PHPはWeb開発でよく使われるプログラミング言語です。';
 
         $chatHistoryService = Mockery::mock(ChatHistoryService::class);
+        $historyLimiter = Mockery::mock(ConversationHistoryLimiter::class);
         $openAIService = Mockery::mock(OpenAIService::class);
         $slackMessageService = Mockery::mock(SlackMessageService::class);
 
@@ -57,6 +59,12 @@ class ConversationServiceTest extends TestCase
                 $channel,
                 $threadTs
             )
+            ->andReturn($history);
+
+        $historyLimiter
+            ->shouldReceive('limit')
+            ->once()
+            ->with($history)
             ->andReturn($history);
 
         $openAIService
@@ -85,6 +93,7 @@ class ConversationServiceTest extends TestCase
 
         $service = new ConversationService(
             $chatHistoryService,
+            $historyLimiter,
             $openAIService,
             $slackMessageService
         );
@@ -119,6 +128,7 @@ class ConversationServiceTest extends TestCase
         $errorMessage = '現在OpenAI APIの利用枠が不足しています。管理者へお問い合わせください。';
 
         $chatHistoryService = Mockery::mock(ChatHistoryService::class);
+        $historyLimiter = Mockery::mock(ConversationHistoryLimiter::class);
         $openAIService = Mockery::mock(OpenAIService::class);
         $slackMessageService = Mockery::mock(SlackMessageService::class);
 
@@ -138,6 +148,12 @@ class ConversationServiceTest extends TestCase
                 $channel,
                 $threadTs
             )
+            ->andReturn($history);
+
+        $historyLimiter
+            ->shouldReceive('limit')
+            ->once()
+            ->with($history)
             ->andReturn($history);
 
         $openAIService
@@ -162,6 +178,7 @@ class ConversationServiceTest extends TestCase
 
         $service = new ConversationService(
             $chatHistoryService,
+            $historyLimiter,
             $openAIService,
             $slackMessageService
         );
@@ -189,6 +206,7 @@ class ConversationServiceTest extends TestCase
         $errorMessage = 'Redisへの保存に失敗しました。';
 
         $chatHistoryService = Mockery::mock(ChatHistoryService::class);
+        $historyLimiter = Mockery::mock(ConversationHistoryLimiter::class);
         $openAIService = Mockery::mock(OpenAIService::class);
         $slackMessageService = Mockery::mock(SlackMessageService::class);
 
@@ -207,6 +225,9 @@ class ConversationServiceTest extends TestCase
         $chatHistoryService
             ->shouldNotReceive('getHistory');
 
+        $historyLimiter
+            ->shouldNotReceive('limit');
+
         $openAIService
             ->shouldNotReceive('generateReply');
 
@@ -224,6 +245,7 @@ class ConversationServiceTest extends TestCase
 
         $service = new ConversationService(
             $chatHistoryService,
+            $historyLimiter,
             $openAIService,
             $slackMessageService
         );
