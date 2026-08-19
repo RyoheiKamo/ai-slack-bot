@@ -19,6 +19,14 @@ class ConversationHistoryLimiter
                 $message['content']
             );
 
+            // 最新メッセージは必ず含める
+            if ($result === []) {
+                $result[] = $message;
+                $tokenCount += $tokens;
+
+                continue;
+            }
+
             if ($tokenCount + $tokens > $maxTokens) {
                 break;
             }

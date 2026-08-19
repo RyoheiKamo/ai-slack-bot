@@ -122,4 +122,50 @@ class ConversationHistoryLimiterTest extends TestCase
         $this->assertCount(1, $result);
         $this->assertSame($messages, $result);
     }
+
+    public function test_latest_message_is_kept_even_when_it_exceeds_token_limit(): void
+    {
+        Config::set('openai.max_history_tokens', 10);
+
+        $messages = [
+            [
+                'role' => 'user',
+                'content' => str_repeat('あ', 45), // 15 tokens
+            ],
+        ];
+
+        $result = $this->service->limit($messages);
+
+        $this->assertCount(1, $result);
+        $this->assertSame($messages, $result);
+    }
+
+    public function test_only_latest_message_is_kept_when_latest_message_exceeds_limit(): void
+    {
+        Config::set('openai.max_history_tokens', 10);
+
+        $messages = [
+            [
+                'role' => 'user',
+                'content' => '古い質問',
+            ],
+            [
+                'role' => 'assistant',
+                'content' => '古い回答',
+            ],
+            [
+                'role' => 'user',
+                'content' => str_repeat('あ', 45), // 15 tokens
+            ],
+        ];
+
+        $result = $this->service->limit($messages);
+
+        $this->assertCount(1, $result);
+
+        $this->assertSame(
+            str_repeat('あ', 45),
+            $result[0]['content']
+        );
+    }
 }
