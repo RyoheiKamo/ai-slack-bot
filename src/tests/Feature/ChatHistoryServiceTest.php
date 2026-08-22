@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use App\Services\ChatHistoryService;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ChatHistoryServiceTest extends TestCase
@@ -17,6 +18,8 @@ class ChatHistoryServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Carbon::setTestNow('2026-08-22 14:55:00');
 
         $this->service = app(ChatHistoryService::class);
 
@@ -32,6 +35,8 @@ class ChatHistoryServiceTest extends TestCase
             $this->channel,
             $this->threadTs
         );
+
+        Carbon::setTestNow();
 
         parent::tearDown();
     }
@@ -49,12 +54,26 @@ class ChatHistoryServiceTest extends TestCase
             $this->threadTs
         );
 
-        $this->assertSame([
-            [
-                'role' => 'user',
-                'content' => 'PHPとは？',
-            ],
-        ], $history);
+        $this->assertCount(1, $history);
+
+        $this->assertTrue(
+            Str::isUuid($history[0]['id'])
+        );
+
+        $this->assertSame(
+            'user',
+            $history[0]['role']
+        );
+
+        $this->assertSame(
+            'PHPとは？',
+            $history[0]['content']
+        );
+
+        $this->assertSame(
+            now()->toIso8601String(),
+            $history[0]['created_at']
+        );
     }
 
     public function test_messages_are_retrieved_in_order(): void
@@ -76,16 +95,50 @@ class ChatHistoryServiceTest extends TestCase
             $this->threadTs
         );
 
-        $this->assertSame([
-            [
-                'role' => 'user',
-                'content' => 'PHPとは？',
-            ],
-            [
-                'role' => 'assistant',
-                'content' => 'PHPはプログラミング言語です。',
-            ],
-        ], $history);
+        $this->assertCount(2, $history);
+
+        $this->assertSame(
+            'user',
+            $history[0]['role']
+        );
+
+        $this->assertSame(
+            'PHPとは？',
+            $history[0]['content']
+        );
+
+        $this->assertTrue(
+            Str::isUuid($history[0]['id'])
+        );
+
+        $this->assertSame(
+            now()->toIso8601String(),
+            $history[0]['created_at']
+        );
+
+        $this->assertSame(
+            'assistant',
+            $history[1]['role']
+        );
+
+        $this->assertSame(
+            'PHPはプログラミング言語です。',
+            $history[1]['content']
+        );
+
+        $this->assertTrue(
+            Str::isUuid($history[1]['id'])
+        );
+
+        $this->assertSame(
+            now()->toIso8601String(),
+            $history[1]['created_at']
+        );
+
+        $this->assertNotSame(
+            $history[0]['id'],
+            $history[1]['id']
+        );
     }
 
     public function test_history_can_be_cleared(): void
@@ -135,6 +188,17 @@ class ChatHistoryServiceTest extends TestCase
             'message 25',
             $history[19]['content']
         );
+
+        foreach ($history as $message) {
+            $this->assertTrue(
+                Str::isUuid($message['id'])
+            );
+
+            $this->assertSame(
+                now()->toIso8601String(),
+                $message['created_at']
+            );
+        }
     }
 
     public function test_ttl_is_set(): void
@@ -151,6 +215,10 @@ class ChatHistoryServiceTest extends TestCase
         );
 
         $this->assertGreaterThan(0, $ttl);
-        $this->assertLessThanOrEqual(86400, $ttl);
+
+        $this->assertLessThanOrEqual(
+            86400,
+            $ttl
+        );
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use JsonException;
 
@@ -17,7 +18,12 @@ class ChatHistoryService
     /**
      * 会話履歴を取得する。
      *
-     * @return array<int, array{role: string, content: string}>
+     * @return array<int, array{
+     *     id: string,
+     *     role: string,
+     *     content: string,
+     *     created_at: string
+     * }>
      *
      * @throws JsonException
      */
@@ -40,16 +46,25 @@ class ChatHistoryService
 
             if (
                 ! is_array($decoded)
-                || ! isset($decoded['role'], $decoded['content'])
+                || ! isset(
+                    $decoded['id'],
+                    $decoded['role'],
+                    $decoded['content'],
+                    $decoded['created_at']
+                )
+                || ! is_string($decoded['id'])
                 || ! is_string($decoded['role'])
                 || ! is_string($decoded['content'])
+                || ! is_string($decoded['created_at'])
             ) {
                 continue;
             }
 
             $history[] = [
+                'id' => $decoded['id'],
                 'role' => $decoded['role'],
                 'content' => $decoded['content'],
+                'created_at' => $decoded['created_at'],
             ];
         }
 
@@ -139,8 +154,10 @@ class ChatHistoryService
 
         $value = json_encode(
             [
+                'id' => (string) Str::uuid(),
                 'role' => $role,
                 'content' => $message,
+                'created_at' => now()->toIso8601String(),
             ],
             JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
         );
@@ -157,6 +174,9 @@ class ChatHistoryService
         $redis->expire($key, self::TTL_SECONDS);
     }
 
+    /**
+     * Redisキーを生成する。
+     */
     private function createKey(
         string $channel,
         string $threadTs
