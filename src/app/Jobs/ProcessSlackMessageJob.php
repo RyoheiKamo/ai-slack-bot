@@ -16,6 +16,8 @@ class ProcessSlackMessageJob implements ShouldQueue
 
     public int $timeout = 60;
 
+    public array $backoff = [5, 15, 30,];
+
     public function __construct(
         private readonly string $text,
         private readonly string $channel,
@@ -23,9 +25,8 @@ class ProcessSlackMessageJob implements ShouldQueue
         private readonly string $eventId
     ) {}
 
-    public function handle(
-        ConversationService $conversationService
-    ): void {
+    public function handle(ConversationService $conversationService): void
+    {
         Log::info('ProcessSlackMessageJob started', [
             'event_id' => $this->eventId,
             'channel' => $this->channel,
