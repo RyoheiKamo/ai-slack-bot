@@ -11,6 +11,8 @@ class ChatHistoryService
 {
     private const KEY_PREFIX = 'slack:chat';
 
+    private const UPDATED_SET_KEY = 'slack:chat:updated';
+
     private const MAX_MESSAGES = 20;
 
     private const TTL_SECONDS = 86400;
@@ -108,15 +110,38 @@ class ChatHistoryService
     }
 
     /**
+     * 一定時間更新されていない会話キーを取得する。
+     *
+     * @return array<int, string>
+     */
+    public function getInactiveConversationKeys(
+        int $inactiveMinutes
+    ): array {
+        $threshold = now()
+            ->subMinutes($inactiveMinutes)
+            ->timestamp;
+
+        return Redis::connection()->zrangebyscore(
+            self::UPDATED_SET_KEY,
+            '-inf',
+            $threshold
+        );
+    }
+
+    /**
      * 会話履歴を削除する。
      */
     public function clearHistory(
         string $channel,
         string $threadTs
     ): void {
-        Redis::connection()->del(
-            $this->createKey($channel, $threadTs)
-        );
+        $key = $this->createKey($channel, $threadTs);
+
+        $redis = Redis::connection();
+
+        $redis->del($key);
+
+        $redis->zrem(self::UPDATED_SET_KEY, $key);
     }
 
     /**
@@ -172,6 +197,9 @@ class ChatHistoryService
 
         // 最終更新から24時間後に削除
         $redis->expire($key, self::TTL_SECONDS);
+
+        // 会話の最終更新時刻を記録
+        $redis->zadd(self::UPDATED_SET_KEY, now()->timestamp, $key);
     }
 
     /**

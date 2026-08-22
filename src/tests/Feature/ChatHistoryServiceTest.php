@@ -221,4 +221,101 @@ class ChatHistoryServiceTest extends TestCase
             $ttl
         );
     }
+
+    public function test_inactive_conversation_can_be_retrieved(): void
+    {
+        Carbon::setTestNow('2026-08-22 15:00:00');
+
+        $this->service->addUserMessage(
+            $this->channel,
+            $this->threadTs,
+            'テスト'
+        );
+
+        Carbon::setTestNow('2026-08-22 15:31:00');
+
+        $keys = $this->service
+            ->getInactiveConversationKeys(30);
+
+        $this->assertContains(
+            'slack:chat:C_TEST:123.456',
+            $keys
+        );
+    }
+
+    public function test_active_conversation_is_not_retrieved(): void
+    {
+        Carbon::setTestNow('2026-08-22 15:00:00');
+
+        $this->service->addUserMessage(
+            $this->channel,
+            $this->threadTs,
+            'テスト'
+        );
+
+        Carbon::setTestNow('2026-08-22 15:29:00');
+
+        $keys = $this->service
+            ->getInactiveConversationKeys(30);
+
+        $this->assertNotContains(
+            'slack:chat:C_TEST:123.456',
+            $keys
+        );
+    }
+
+    public function test_last_updated_time_is_refreshed_when_message_is_added(): void
+    {
+        Carbon::setTestNow('2026-08-22 15:00:00');
+
+        $this->service->addUserMessage(
+            $this->channel,
+            $this->threadTs,
+            '最初のメッセージ'
+        );
+
+        Carbon::setTestNow('2026-08-22 15:20:00');
+
+        $this->service->addAssistantMessage(
+            $this->channel,
+            $this->threadTs,
+            '回答'
+        );
+
+        Carbon::setTestNow('2026-08-22 15:31:00');
+
+        $keys = $this->service
+            ->getInactiveConversationKeys(30);
+
+        $this->assertNotContains(
+            'slack:chat:C_TEST:123.456',
+            $keys
+        );
+    }
+
+    public function test_clear_history_removes_conversation_from_updated_set(): void
+    {
+        Carbon::setTestNow('2026-08-22 15:00:00');
+
+        $this->service->addUserMessage(
+            $this->channel,
+            $this->threadTs,
+            'テスト'
+        );
+
+        $this->service->clearHistory(
+            $this->channel,
+            $this->threadTs
+        );
+
+        Carbon::setTestNow('2026-08-22 16:00:00');
+
+        $keys = $this->service
+            ->getInactiveConversationKeys(30);
+
+        $this->assertNotContains(
+            'slack:chat:C_TEST:123.456',
+            $keys
+        );
+    }
 }
