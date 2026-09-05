@@ -14,7 +14,7 @@ class OpenAIService
     /**
      * 会話履歴をOpenAIへ送信し、生成されたテキストを返す。
      *
-     * @param array<int, array{role: string, content: string}> $messages
+     * @param array<int, array<string, mixed>> $messages
      */
     public function generateReply(array $messages): string
     {
@@ -28,6 +28,14 @@ class OpenAIService
             throw new RuntimeException('OPENAI_API_KEYが設定されていません。');
         }
 
+        $input = $this->normalizeMessages($messages);
+
+        if ($input === []) {
+            throw new RuntimeException(
+                'OpenAIへ送信可能な会話履歴がありません。'
+            );
+        }
+
         try {
             $response = Http::withToken($apiKey)
                 ->acceptJson()
@@ -36,7 +44,7 @@ class OpenAIService
                 ->post(self::ENDPOINT, [
                     'model' => config('services.openai.model'),
                     'instructions' => config('openai.instructions'),
-                    'input' => $messages,
+                    'input' => $input,
                 ]);
         } catch (ConnectionException $e) {
             Log::error('OpenAI API connection failed', [
@@ -88,6 +96,44 @@ class OpenAIService
         ]);
 
         return $reply;
+    }
+
+    /**
+     * Redis等から取得した会話履歴を、
+     * OpenAI Responses APIへ送信可能な形式へ変換する。
+     *
+     * created_at 等のアプリ内部用データはOpenAIへ送信しない。
+     *
+     * @param array<int, array<string, mixed>> $messages
+     * @return array<int, array{role: string, content: string}>
+     */
+    private function normalizeMessages(array $messages): array
+    {
+        $normalized = [];
+
+        foreach ($messages as $message) {
+            $role = $message['role'] ?? null;
+            $content = $message['content'] ?? null;
+
+            if (! is_string($role) || ! is_string($content)) {
+                continue;
+            }
+
+            if (! in_array($role, ['user', 'assistant'], true)) {
+                continue;
+            }
+
+            if ($content === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'role' => $role,
+                'content' => $content,
+            ];
+        }
+
+        return $normalized;
     }
 
     /**
