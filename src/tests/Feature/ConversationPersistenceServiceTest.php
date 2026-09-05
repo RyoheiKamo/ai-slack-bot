@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Repositories\ConversationMessageRepository;
 use App\Services\ChatHistoryService;
 use App\Services\ConversationPersistenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Redis;
+use Mockery;
+use RuntimeException;
 use Tests\TestCase;
 
 class ConversationPersistenceServiceTest extends TestCase
@@ -237,6 +240,92 @@ class ConversationPersistenceServiceTest extends TestCase
         Redis::connection()->rpush(
             $key,
             $value
+        );
+    }
+
+    public function test_redis_history_remains_when_database_persistence_fails(): void
+    {
+        $this->chatHistoryService->addUserMessage(
+            $this->channel,
+            $this->threadTs,
+            'DB保存失敗テスト'
+        );
+
+        $historyBefore = $this->chatHistoryService->getHistory(
+            $this->channel,
+            $this->threadTs
+        );
+
+        $this->assertCount(1, $historyBefore);
+
+        $messageRepository = Mockery::mock(
+            ConversationMessageRepository::class
+        );
+
+        $messageRepository
+            ->shouldReceive('createIfNotExists')
+            ->once()
+            ->andThrow(
+                new RuntimeException(
+                    'Persistence failure test'
+                )
+            );
+
+        $this->app->instance(
+            ConversationMessageRepository::class,
+            $messageRepository
+        );
+
+        $service = app(
+            ConversationPersistenceService::class
+        );
+
+        try {
+            $service->persist(
+                $this->channel,
+                $this->threadTs
+            );
+
+            $this->fail(
+                'RuntimeException was not thrown.'
+            );
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Persistence failure test',
+                $exception->getMessage()
+            );
+        }
+
+        // Transaction内で作成したConversationもrollbackされること
+        $this->assertDatabaseCount(
+            'conversations',
+            0
+        );
+
+        $this->assertDatabaseCount(
+            'conversation_messages',
+            0
+        );
+
+        // DB保存に失敗したためRedis履歴は削除されないこと
+        $historyAfter = $this->chatHistoryService->getHistory(
+            $this->channel,
+            $this->threadTs
+        );
+
+        $this->assertCount(
+            1,
+            $historyAfter
+        );
+
+        $this->assertSame(
+            $historyBefore[0]['id'],
+            $historyAfter[0]['id']
+        );
+
+        $this->assertSame(
+            'DB保存失敗テスト',
+            $historyAfter[0]['content']
         );
     }
 }

@@ -114,9 +114,8 @@ class ChatHistoryService
      *
      * @return array<int, string>
      */
-    public function getInactiveConversationKeys(
-        int $inactiveMinutes
-    ): array {
+    public function getInactiveConversationKeys(int $inactiveMinutes): array
+    {
         $threshold = now()
             ->subMinutes($inactiveMinutes)
             ->timestamp;
@@ -126,6 +125,35 @@ class ChatHistoryService
             '-inf',
             $threshold
         );
+    }
+
+    /**
+     * 一定時間更新されていない会話を取得する。
+     *
+     * @return array<int, array{
+     *     channel: string,
+     *     thread_ts: string
+     * }>
+     */
+    public function getInactiveConversations(int $inactiveMinutes): array
+    {
+        $keys = $this->getInactiveConversationKeys(
+            $inactiveMinutes
+        );
+
+        $conversations = [];
+
+        foreach ($keys as $key) {
+            $parsed = $this->parseConversationKey($key);
+
+            if ($parsed === null) {
+                continue;
+            }
+
+            $conversations[] = $parsed;
+        }
+
+        return $conversations;
     }
 
     /**
@@ -215,5 +243,44 @@ class ChatHistoryService
             $channel,
             $threadTs
         );
+    }
+
+    /**
+     * Redisの会話キーからchannelとthreadTsを取得する。
+     *
+     * @return array{
+     *     channel: string,
+     *     thread_ts: string
+     * }|null
+     */
+    private function parseConversationKey(string $key): ?array
+    {
+        $prefix = self::KEY_PREFIX . ':';
+
+        if (! str_starts_with($key, $prefix)) {
+            return null;
+        }
+
+        $value = substr(
+            $key,
+            strlen($prefix)
+        );
+
+        $parts = explode(':', $value, 2);
+
+        if (count($parts) !== 2) {
+            return null;
+        }
+
+        [$channel, $threadTs] = $parts;
+
+        if ($channel === '' || $threadTs === '') {
+            return null;
+        }
+
+        return [
+            'channel' => $channel,
+            'thread_ts' => $threadTs,
+        ];
     }
 }
