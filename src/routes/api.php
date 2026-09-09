@@ -8,4 +8,5 @@ Route::post('/slack/events', [SlackEventController::class, 'handle']);
 
 Route::prefix('admin')->group(function () {
     Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::get('/conversations/{conversation}', [ConversationController::class, 'show']);
 });

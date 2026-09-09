@@ -59,4 +59,34 @@ class ConversationController extends Controller
             ],
         ]);
     }
+
+    public function show(Conversation $conversation): JsonResponse
+    {
+        $conversation->load([
+            'messages' => function ($query) {
+                $query->orderBy('message_created_at');
+            },
+        ]);
+
+        return response()->json([
+            'data' => [
+                'id' => $conversation->id,
+                'channel' => $conversation->channel,
+                'thread_ts' => $conversation->thread_ts,
+                'created_at' => $conversation->created_at,
+                'updated_at' => $conversation->updated_at,
+                'messages' => $conversation->messages->map(
+                    function ($message) {
+                        return [
+                            'id' => $message->id,
+                            'message_id' => $message->message_id,
+                            'role' => $message->role,
+                            'content' => $message->content,
+                            'message_created_at' => $message->message_created_at,
+                        ];
+                    }
+                ),
+            ],
+        ]);
+    }
 }

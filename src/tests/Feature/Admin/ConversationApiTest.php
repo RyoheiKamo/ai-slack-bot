@@ -268,4 +268,134 @@ class ConversationApiTest extends TestCase
                 '1757390000.111111'
             );
     }
+
+    public function test_conversation_detail_can_be_fetched(): void
+    {
+        $conversation = Conversation::factory()->create();
+
+        $response = $this->getJson(
+            "/api/admin/conversations/{$conversation->id}"
+        );
+
+        $response->assertOk();
+    }
+
+    public function test_conversation_detail_has_expected_json_structure(): void
+    {
+        $conversation = Conversation::factory()->create();
+
+        $response = $this->getJson(
+            "/api/admin/conversations/{$conversation->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'channel',
+                    'thread_ts',
+                    'created_at',
+                    'updated_at',
+                ],
+            ]);
+    }
+
+    public function test_conversation_detail_contains_messages(): void
+    {
+        $conversation = Conversation::factory()->create();
+
+        $conversation->messages()->createMany([
+            [
+                'message_id' => fake()->uuid(),
+                'role' => 'user',
+                'content' => 'Laravelについて教えて',
+                'message_created_at' => now()
+                    ->subMinute()
+                    ->startOfSecond(),
+            ],
+            [
+                'message_id' => fake()->uuid(),
+                'role' => 'assistant',
+                'content' => 'LaravelはPHPのWebフレームワークです。',
+                'message_created_at' => now()
+                    ->startOfSecond(),
+            ],
+        ]);
+
+        $response = $this->getJson(
+            "/api/admin/conversations/{$conversation->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'channel',
+                    'thread_ts',
+                    'created_at',
+                    'updated_at',
+                    'messages' => [
+                        '*' => [
+                            'id',
+                            'message_id',
+                            'role',
+                            'content',
+                            'message_created_at',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertJsonCount(
+                2,
+                'data.messages'
+            );
+    }
+
+    public function test_conversation_detail_messages_are_ordered_by_created_at_asc(): void
+    {
+        $conversation = Conversation::factory()->create();
+
+        $newMessage = $conversation->messages()->create([
+            'message_id' => fake()->uuid(),
+            'role' => 'assistant',
+            'content' => '新しいメッセージ',
+            'message_created_at' => now()
+                ->startOfSecond(),
+        ]);
+
+        $oldMessage = $conversation->messages()->create([
+            'message_id' => fake()->uuid(),
+            'role' => 'user',
+            'content' => '古いメッセージ',
+            'message_created_at' => now()
+                ->subMinutes(5)
+                ->startOfSecond(),
+        ]);
+
+        $response = $this->getJson(
+            "/api/admin/conversations/{$conversation->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.messages.0.id',
+                $oldMessage->id
+            )
+            ->assertJsonPath(
+                'data.messages.1.id',
+                $newMessage->id
+            );
+    }
+
+    public function test_conversation_detail_returns_404_when_not_found(): void
+    {
+        $response = $this->getJson(
+            '/api/admin/conversations/999999'
+        );
+
+        $response->assertNotFound();
+    }
 }
