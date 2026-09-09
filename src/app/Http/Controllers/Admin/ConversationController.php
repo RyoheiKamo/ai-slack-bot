@@ -66,6 +66,8 @@ class ConversationController extends Controller
             'messages' => function ($query) {
                 $query->orderBy('message_created_at');
             },
+            'latestMessage',
+            'firstMessage',
         ]);
 
         return response()->json([
@@ -73,6 +75,9 @@ class ConversationController extends Controller
                 'id' => $conversation->id,
                 'channel' => $conversation->channel,
                 'thread_ts' => $conversation->thread_ts,
+                'message_count' => $conversation->messages->count(),
+                'latest_message' => $conversation->latestMessage?->content,
+                'started_at' => $conversation->firstMessage?->message_created_at,
                 'created_at' => $conversation->created_at,
                 'updated_at' => $conversation->updated_at,
                 'messages' => $conversation->messages->map(

@@ -398,4 +398,70 @@ class ConversationApiTest extends TestCase
 
         $response->assertNotFound();
     }
+
+    public function test_conversation_detail_returns_message_count(): void
+    {
+        $conversation = Conversation::factory()->create();
+
+        $conversation->messages()->createMany([
+            [
+                'message_id' => fake()->uuid(),
+                'role' => 'user',
+                'content' => 'メッセージ1',
+                'message_created_at' => now()->subMinute()->startOfSecond(),
+            ],
+            [
+                'message_id' => fake()->uuid(),
+                'role' => 'assistant',
+                'content' => 'メッセージ2',
+                'message_created_at' => now()->startOfSecond(),
+            ],
+        ]);
+
+        $response = $this->getJson(
+            "/api/admin/conversations/{$conversation->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.message_count',
+                2
+            );
+    }
+
+    public function test_conversation_detail_returns_started_at(): void
+    {
+        $conversation = Conversation::factory()->create();
+
+        $startedAt = now()
+            ->subMinutes(5)
+            ->startOfSecond();
+
+        $conversation->messages()->createMany([
+            [
+                'message_id' => fake()->uuid(),
+                'role' => 'user',
+                'content' => '最初のメッセージ',
+                'message_created_at' => $startedAt,
+            ],
+            [
+                'message_id' => fake()->uuid(),
+                'role' => 'assistant',
+                'content' => '次のメッセージ',
+                'message_created_at' => now()->startOfSecond(),
+            ],
+        ]);
+
+        $response = $this->getJson(
+            "/api/admin/conversations/{$conversation->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.started_at',
+                $startedAt->toISOString()
+            );
+    }
 }
