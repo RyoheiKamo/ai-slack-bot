@@ -1,12 +1,13 @@
-import type { Conversation } from '../../types/conversation';
+import { useNavigate } from "react-router-dom";
+import type { Conversation } from "../../types/conversation";
 
 type Props = {
   conversations: Conversation[];
 };
 
-export function ConversationTable({
-  conversations,
-}: Props) {
+export function ConversationTable({ conversations }: Props) {
+  const navigate = useNavigate();
+
   if (conversations.length === 0) {
     return <p>会話履歴がありません。</p>;
   }
@@ -25,16 +26,18 @@ export function ConversationTable({
 
       <tbody>
         {conversations.map((conversation) => (
-          <tr key={conversation.id}>
+          <tr
+            key={conversation.id}
+            onClick={() => {
+              navigate(`/admin/conversations/${conversation.id}`);
+            }}
+            style={{ cursor: "pointer" }}
+          >
             <td>{conversation.channel}</td>
             <td>{conversation.thread_ts}</td>
             <td>{conversation.message_count}</td>
-            <td>
-              {conversation.latest_message ?? '-'}
-            </td>
-            <td>
-              {conversation.started_at ?? '-'}
-            </td>
+            <td>{conversation.latest_message ?? "-"}</td>
+            <td>{conversation.started_at ?? "-"}</td>
           </tr>
         ))}
       </tbody>
