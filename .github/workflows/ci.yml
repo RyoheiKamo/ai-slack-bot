@@ -14,6 +14,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: ai_slack_bot
+      DB_USERNAME: laravel
+      DB_PASSWORD: password
+
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+
     services:
       mysql:
         image: mysql:8.4
@@ -67,18 +78,6 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
-
-      - name: Configure test environment
-        run: |
-          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
-          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-          sed -i 's/^DB_PORT=.*/DB_PORT=3306/' .env
-          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=ai_slack_bot/' .env
-          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=laravel/' .env
-          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=password/' .env
-
-          sed -i 's/^REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' .env
-          sed -i 's/^REDIS_PORT=.*/REDIS_PORT=6379/' .env
 
       - name: Run migrations
         run: php artisan migrate --force
