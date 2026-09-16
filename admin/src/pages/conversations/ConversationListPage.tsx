@@ -89,7 +89,7 @@ export function ConversationListPage() {
     <main>
       <h1>会話履歴</h1>
 
-      <div>
+      <div className="search-form">
         <label htmlFor="channel">Channel</label>
 
         <input
@@ -126,30 +126,32 @@ export function ConversationListPage() {
       <ConversationTable conversations={conversations} />
 
       {meta && (
-        <div>
+        <div className="pagination">
           <p>
             {meta.current_page} / {meta.last_page} ページ （全{meta.total}件）
           </p>
 
-          <button
-            type="button"
-            onClick={() => {
-              handlePageChange(page - 1);
-            }}
-            disabled={meta.current_page <= 1}
-          >
-            前へ
-          </button>
+          <div className="pagination-buttons">
+            <button
+              type="button"
+              onClick={() => {
+                handlePageChange(page - 1);
+              }}
+              disabled={meta.current_page <= 1}
+            >
+              前へ
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              handlePageChange(page + 1);
-            }}
-            disabled={meta.current_page >= meta.last_page}
-          >
-            次へ
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                handlePageChange(page + 1);
+              }}
+              disabled={meta.current_page >= meta.last_page}
+            >
+              次へ
+            </button>
+          </div>
         </div>
       )}
     </main>
