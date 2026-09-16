@@ -51,6 +51,10 @@ export async function fetchConversationDetail(
     },
   });
 
+  if (response.status === 404) {
+    throw new Error("NOT_FOUND");
+  }
+
   if (!response.ok) {
     throw new Error(`Failed to fetch conversation detail: ${response.status}`);
   }

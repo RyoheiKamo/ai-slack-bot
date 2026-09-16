@@ -4,6 +4,8 @@ import { fetchConversationDetail } from "../../api/conversations";
 import type { ConversationDetail } from "../../types/conversation";
 import { formatDateTime } from "../../utils/date";
 
+type ErrorType = "not-found" | "fetch-error" | "invalid-id" | null;
+
 export function ConversationDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -12,20 +14,20 @@ export function ConversationDetailPage() {
     null,
   );
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<ErrorType>(null);
   const from = location.state?.from ?? "/admin/conversations";
 
   useEffect(() => {
     const loadConversation = async () => {
       if (!id) {
-        setError("会話IDが指定されていません。");
+        setErrorType("invalid-id");
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        setError(null);
+        setErrorType(null);
 
         const response = await fetchConversationDetail(id);
 
@@ -33,7 +35,11 @@ export function ConversationDetailPage() {
       } catch (error) {
         console.error(error);
 
-        setError("会話履歴詳細の取得に失敗しました。");
+        if (error instanceof Error && error.message === "NOT_FOUND") {
+          setErrorType("not-found");
+        } else {
+          setErrorType("fetch-error");
+        }
       } finally {
         setLoading(false);
       }
@@ -46,8 +52,46 @@ export function ConversationDetailPage() {
     return <p>読み込み中...</p>;
   }
 
-  if (error) {
-    return <p>{error}</p>;
+  if (errorType === "not-found") {
+    return (
+      <main>
+        <h1>会話履歴が見つかりません</h1>
+
+        <p>指定された会話履歴は存在しないか、 すでに削除されています。</p>
+
+        <button type="button" onClick={() => navigate(from)}>
+          一覧へ戻る
+        </button>
+      </main>
+    );
+  }
+
+  if (errorType === "fetch-error") {
+    return (
+      <main>
+        <h1>エラー</h1>
+
+        <p>会話履歴詳細の取得に失敗しました。</p>
+
+        <button type="button" onClick={() => navigate(from)}>
+          一覧へ戻る
+        </button>
+      </main>
+    );
+  }
+
+  if (errorType === "invalid-id") {
+    return (
+      <main>
+        <h1>エラー</h1>
+
+        <p>会話IDが指定されていません。</p>
+
+        <button type="button" onClick={() => navigate(from)}>
+          一覧へ戻る
+        </button>
+      </main>
+    );
   }
 
   if (!conversation) {
