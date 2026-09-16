@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchConversationDetail } from "../../api/conversations";
 import type { ConversationDetail } from "../../types/conversation";
+import { formatDateTime } from "../../utils/date";
 
 export function ConversationDetailPage() {
   const { id } = useParams();
@@ -75,7 +76,7 @@ export function ConversationDetailPage() {
         <dd>{conversation.message_count}</dd>
 
         <dt>Started At</dt>
-        <dd>{conversation.started_at ?? "-"}</dd>
+        <dd>{formatDateTime(conversation.started_at)}</dd>
 
         <dt>Latest Message</dt>
         <dd>{conversation.latest_message ?? "-"}</dd>
@@ -95,7 +96,7 @@ export function ConversationDetailPage() {
 
               <p>{message.content}</p>
 
-              <small>{message.message_created_at}</small>
+              <small>{formatDateTime(message.message_created_at)}</small>
 
               <hr />
             </article>

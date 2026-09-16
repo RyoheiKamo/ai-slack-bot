@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Conversation } from "../../types/conversation";
+import { formatDateTime } from "../../utils/date";
 
 type Props = {
   conversations: Conversation[];
@@ -44,7 +45,7 @@ export function ConversationTable({ conversations }: Props) {
             <td>{conversation.thread_ts}</td>
             <td>{conversation.message_count}</td>
             <td>{conversation.latest_message ?? "-"}</td>
-            <td>{conversation.started_at ?? "-"}</td>
+            <td>{formatDateTime(conversation.started_at)}</td>
           </tr>
         ))}
       </tbody>
