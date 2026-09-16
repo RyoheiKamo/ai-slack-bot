@@ -15,6 +15,8 @@ class ChatHistoryServiceTest extends TestCase
 
     private string $threadTs = '123.456';
 
+    private int $slackUserDbId = 1;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -46,7 +48,8 @@ class ChatHistoryServiceTest extends TestCase
         $this->service->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'PHPとは？'
+            'PHPとは？',
+            $this->slackUserDbId
         );
 
         $history = $this->service->getHistory(
@@ -81,7 +84,8 @@ class ChatHistoryServiceTest extends TestCase
         $this->service->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'PHPとは？'
+            'PHPとは？',
+            $this->slackUserDbId
         );
 
         $this->service->addAssistantMessage(
@@ -146,7 +150,8 @@ class ChatHistoryServiceTest extends TestCase
         $this->service->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'テスト'
+            'テスト',
+            $this->slackUserDbId
         );
 
         $this->service->clearHistory(
@@ -168,7 +173,8 @@ class ChatHistoryServiceTest extends TestCase
             $this->service->addUserMessage(
                 $this->channel,
                 $this->threadTs,
-                "message {$i}"
+                "message {$i}",
+                $this->slackUserDbId
             );
         }
 
@@ -206,7 +212,8 @@ class ChatHistoryServiceTest extends TestCase
         $this->service->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'TTL test'
+            'TTL test',
+            $this->slackUserDbId
         );
 
         $ttl = $this->service->getTtl(
@@ -229,7 +236,8 @@ class ChatHistoryServiceTest extends TestCase
         $this->service->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'テスト'
+            'テスト',
+            $this->slackUserDbId
         );
 
         Carbon::setTestNow('2026-08-22 15:31:00');
@@ -250,7 +258,8 @@ class ChatHistoryServiceTest extends TestCase
         $this->service->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'テスト'
+            'テスト',
+            $this->slackUserDbId
         );
 
         Carbon::setTestNow('2026-08-22 15:29:00');
@@ -271,7 +280,8 @@ class ChatHistoryServiceTest extends TestCase
         $this->service->addUserMessage(
             $this->channel,
             $this->threadTs,
-            '最初のメッセージ'
+            '最初のメッセージ',
+            $this->slackUserDbId
         );
 
         Carbon::setTestNow('2026-08-22 15:20:00');
@@ -300,7 +310,8 @@ class ChatHistoryServiceTest extends TestCase
         $this->service->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'テスト'
+            'テスト',
+            $this->slackUserDbId
         );
 
         $this->service->clearHistory(

@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Conversation;
-use App\Models\ConversationMessage;
+use App\Models\SlackUser;
 use App\Repositories\ConversationMessageRepository;
 use App\Services\ChatHistoryService;
 use App\Services\ConversationPersistenceService;
@@ -55,10 +55,13 @@ class ConversationPersistenceServiceTest extends TestCase
 
     public function test_redis_history_can_be_persisted_to_database(): void
     {
+        $slackUser = SlackUser::factory()->create();
+
         $this->chatHistoryService->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'PHPとは？'
+            'PHPとは？',
+            $slackUser->id
         );
 
         $this->chatHistoryService->addAssistantMessage(
@@ -116,10 +119,13 @@ class ConversationPersistenceServiceTest extends TestCase
 
     public function test_redis_history_is_cleared_after_persistence(): void
     {
+        $slackUser = SlackUser::factory()->create();
+
         $this->chatHistoryService->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'Redis削除テスト'
+            'Redis削除テスト',
+            $slackUser->id
         );
 
         $this->assertCount(
@@ -247,10 +253,13 @@ class ConversationPersistenceServiceTest extends TestCase
 
     public function test_redis_history_remains_when_database_persistence_fails(): void
     {
+        $slackUser = SlackUser::factory()->create();
+
         $this->chatHistoryService->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'DB保存失敗テスト'
+            'DB保存失敗テスト',
+            $slackUser->id
         );
 
         $historyBefore = $this->chatHistoryService->getHistory(
@@ -333,7 +342,7 @@ class ConversationPersistenceServiceTest extends TestCase
 
     public function test_slack_user_id_is_persisted_with_user_message(): void
     {
-        $slackUser = \App\Models\SlackUser::factory()->create();
+        $slackUser = SlackUser::factory()->create();
 
         $messageId = '22222222-2222-4222-8222-222222222222';
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\PersistChatHistoryJob;
 use App\Models\Conversation;
+use App\Models\SlackUser;
 use App\Services\ChatHistoryService;
 use App\Services\ConversationPersistenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,10 +46,13 @@ class PersistChatHistoryJobTest extends TestCase
 
     public function test_chat_history_can_be_persisted_by_job(): void
     {
+        $slackUser = SlackUser::factory()->create();
+
         $this->chatHistoryService->addUserMessage(
             $this->channel,
             $this->threadTs,
-            'PHPとは？'
+            'PHPとは？',
+            $slackUser->id
         );
 
         $this->chatHistoryService->addAssistantMessage(

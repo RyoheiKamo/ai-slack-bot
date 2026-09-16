@@ -35,22 +35,25 @@ class SlackEventService
         $channel = $event['channel'] ?? null;
         $threadTs = $event['thread_ts'] ?? $event['ts'] ?? null;
         $text = $event['text'] ?? '';
+        $slackUserId = $event['user'] ?? null;
 
         if (
             ! is_string($channel)
             || ! is_string($threadTs)
             || ! is_string($text)
+            || ! is_string($slackUserId)
+            || $slackUserId === ''
         ) {
             Log::warning('Slack event missing required fields', [
                 'event_id' => $eventId,
                 'channel' => $channel,
                 'thread_ts' => $threadTs,
+                'user' => $slackUserId,
             ]);
 
             return;
         }
 
-        // 実際に処理するイベントに対して重複チェック
         if (! $this->deduplicationService->acquire($eventId)) {
             Log::info('Duplicate Slack event skipped', [
                 'event_id' => $eventId,
@@ -63,14 +66,15 @@ class SlackEventService
             'event_id' => $eventId,
             'type' => $event['type'],
             'channel' => $channel,
-            'user' => $event['user'] ?? null,
+            'user' => $slackUserId,
         ]);
 
         ProcessSlackMessageJob::dispatch(
             $text,
             $channel,
             $threadTs,
-            $eventId
+            $eventId,
+            $slackUserId
         );
     }
 }

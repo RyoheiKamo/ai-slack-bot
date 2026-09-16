@@ -16,13 +16,14 @@ class ProcessSlackMessageJob implements ShouldQueue
 
     public int $timeout = 60;
 
-    public array $backoff = [5, 15, 30,];
+    public array $backoff = [5, 15, 30];
 
     public function __construct(
         private readonly string $text,
         private readonly string $channel,
         private readonly string $threadTs,
-        private readonly string $eventId
+        private readonly string $eventId,
+        private readonly string $slackUserId
     ) {}
 
     public function handle(ConversationService $conversationService): void
@@ -31,13 +32,15 @@ class ProcessSlackMessageJob implements ShouldQueue
             'event_id' => $this->eventId,
             'channel' => $this->channel,
             'thread_ts' => $this->threadTs,
+            'slack_user_id' => $this->slackUserId,
         ]);
 
         $conversationService->process(
             $this->text,
             $this->channel,
             $this->threadTs,
-            $this->eventId
+            $this->eventId,
+            $this->slackUserId
         );
     }
 
@@ -47,6 +50,7 @@ class ProcessSlackMessageJob implements ShouldQueue
             'event_id' => $this->eventId,
             'channel' => $this->channel,
             'thread_ts' => $this->threadTs,
+            'slack_user_id' => $this->slackUserId,
             'message' => $exception->getMessage(),
         ]);
     }

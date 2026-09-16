@@ -83,13 +83,15 @@ class ChatHistoryService
     public function addUserMessage(
         string $channel,
         string $threadTs,
-        string $message
+        string $message,
+        int $slackUserId
     ): void {
         $this->addMessage(
             $channel,
             $threadTs,
             'user',
-            $message
+            $message,
+            $slackUserId
         );
     }
 
@@ -107,7 +109,8 @@ class ChatHistoryService
             $channel,
             $threadTs,
             'assistant',
-            $message
+            $message,
+            null
         );
     }
 
@@ -195,7 +198,8 @@ class ChatHistoryService
         string $channel,
         string $threadTs,
         string $role,
-        string $message
+        string $message,
+        ?int $slackUserId = null
     ): void {
         $message = trim($message);
 
@@ -213,6 +217,7 @@ class ChatHistoryService
                 'role' => $role,
                 'content' => $message,
                 'created_at' => now()->toIso8601String(),
+                'slack_user_id' => $slackUserId,
             ],
             JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
         );

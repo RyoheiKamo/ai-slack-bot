@@ -2,16 +2,22 @@
 
 namespace Tests\Feature;
 
+use App\Models\SlackUser;
 use App\Services\ChatHistoryService;
 use App\Services\ConversationHistoryLimiter;
 use App\Services\ConversationService;
 use App\Services\OpenAIService;
 use App\Services\SlackMessageService;
+use App\Services\SlackUserService;
 use Mockery;
 use Tests\TestCase;
 
 class ConversationServiceTest extends TestCase
 {
+    private string $slackUserId = 'U12345678';
+
+    private int $slackUserDbId = 1;
+
     protected function tearDown(): void
     {
         Mockery::close();
@@ -42,6 +48,10 @@ class ConversationServiceTest extends TestCase
         $historyLimiter = Mockery::mock(ConversationHistoryLimiter::class);
         $openAIService = Mockery::mock(OpenAIService::class);
         $slackMessageService = Mockery::mock(SlackMessageService::class);
+        $slackUserService = $this->mockSlackUserService(
+            $this->slackUserId,
+            $this->slackUserDbId
+        );
 
         $chatHistoryService
             ->shouldReceive('addUserMessage')
@@ -49,7 +59,8 @@ class ConversationServiceTest extends TestCase
             ->with(
                 $channel,
                 $threadTs,
-                'PHPとは？'
+                'PHPとは？',
+                $this->slackUserDbId
             );
 
         $chatHistoryService
@@ -95,14 +106,16 @@ class ConversationServiceTest extends TestCase
             $chatHistoryService,
             $historyLimiter,
             $openAIService,
-            $slackMessageService
+            $slackMessageService,
+            $slackUserService
         );
 
         $service->process(
             $text,
             $channel,
             $threadTs,
-            $eventId
+            $eventId,
+            $this->slackUserId
         );
 
         $this->assertTrue(true);
@@ -131,6 +144,10 @@ class ConversationServiceTest extends TestCase
         $historyLimiter = Mockery::mock(ConversationHistoryLimiter::class);
         $openAIService = Mockery::mock(OpenAIService::class);
         $slackMessageService = Mockery::mock(SlackMessageService::class);
+        $slackUserService = $this->mockSlackUserService(
+            $this->slackUserId,
+            $this->slackUserDbId
+        );
 
         $chatHistoryService
             ->shouldReceive('addUserMessage')
@@ -138,7 +155,8 @@ class ConversationServiceTest extends TestCase
             ->with(
                 $channel,
                 $threadTs,
-                'PHPとは？'
+                'PHPとは？',
+                $this->slackUserDbId
             );
 
         $chatHistoryService
@@ -180,14 +198,16 @@ class ConversationServiceTest extends TestCase
             $chatHistoryService,
             $historyLimiter,
             $openAIService,
-            $slackMessageService
+            $slackMessageService,
+            $slackUserService
         );
 
         $service->process(
             $text,
             $channel,
             $threadTs,
-            $eventId
+            $eventId,
+            $this->slackUserId
         );
 
         $this->assertTrue(true);
@@ -209,6 +229,10 @@ class ConversationServiceTest extends TestCase
         $historyLimiter = Mockery::mock(ConversationHistoryLimiter::class);
         $openAIService = Mockery::mock(OpenAIService::class);
         $slackMessageService = Mockery::mock(SlackMessageService::class);
+        $slackUserService = $this->mockSlackUserService(
+            $this->slackUserId,
+            $this->slackUserDbId
+        );
 
         $chatHistoryService
             ->shouldReceive('addUserMessage')
@@ -216,7 +240,8 @@ class ConversationServiceTest extends TestCase
             ->with(
                 $channel,
                 $threadTs,
-                'PHPとは？'
+                'PHPとは？',
+                $this->slackUserDbId
             )
             ->andThrow(
                 new \RuntimeException($errorMessage)
@@ -247,14 +272,16 @@ class ConversationServiceTest extends TestCase
             $chatHistoryService,
             $historyLimiter,
             $openAIService,
-            $slackMessageService
+            $slackMessageService,
+            $slackUserService
         );
 
         $service->process(
             $text,
             $channel,
             $threadTs,
-            $eventId
+            $eventId,
+            $this->slackUserId
         );
 
         $this->assertTrue(true);
@@ -267,21 +294,14 @@ class ConversationServiceTest extends TestCase
         $threadTs = '123.456';
         $eventId = 'Ev123';
 
-        $chatHistoryService = Mockery::mock(
-            ChatHistoryService::class
-        );
+        $chatHistoryService = Mockery::mock(ChatHistoryService::class);
+        $historyLimiter = Mockery::mock(ConversationHistoryLimiter::class);
+        $openAIService = Mockery::mock(OpenAIService::class);
+        $slackMessageService = Mockery::mock(SlackMessageService::class);
+        $slackUserService = Mockery::mock(SlackUserService::class);
 
-        $historyLimiter = Mockery::mock(
-            ConversationHistoryLimiter::class
-        );
-
-        $openAIService = Mockery::mock(
-            OpenAIService::class
-        );
-
-        $slackMessageService = Mockery::mock(
-            SlackMessageService::class
-        );
+        $slackUserService
+            ->shouldNotReceive('findOrCreate');
 
         $chatHistoryService
             ->shouldReceive('clearHistory')
@@ -316,16 +336,39 @@ class ConversationServiceTest extends TestCase
             $chatHistoryService,
             $historyLimiter,
             $openAIService,
-            $slackMessageService
+            $slackMessageService,
+            $slackUserService
         );
 
         $service->process(
             $text,
             $channel,
             $threadTs,
-            $eventId
+            $eventId,
+            $this->slackUserId
         );
 
         $this->assertTrue(true);
+    }
+
+    private function mockSlackUserService(
+        string $slackUserId,
+        int $slackUserDbId = 1
+    ): SlackUserService {
+        $slackUserService = Mockery::mock(
+            SlackUserService::class
+        );
+
+        $slackUser = new SlackUser();
+        $slackUser->id = $slackUserDbId;
+        $slackUser->slack_user_id = $slackUserId;
+
+        $slackUserService
+            ->shouldReceive('findOrCreate')
+            ->once()
+            ->with($slackUserId)
+            ->andReturn($slackUser);
+
+        return $slackUserService;
     }
 }

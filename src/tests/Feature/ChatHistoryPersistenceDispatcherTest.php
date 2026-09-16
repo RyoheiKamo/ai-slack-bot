@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Jobs\PersistChatHistoryJob;
+use App\Models\SlackUser;
 use App\Services\ChatHistoryPersistenceDispatcher;
 use App\Services\ChatHistoryService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
@@ -12,6 +14,8 @@ use Tests\TestCase;
 
 class ChatHistoryPersistenceDispatcherTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ChatHistoryService $chatHistoryService;
 
     protected function setUp(): void
@@ -50,6 +54,8 @@ class ChatHistoryPersistenceDispatcherTest extends TestCase
 
     public function test_inactive_conversation_job_is_dispatched(): void
     {
+        $slackUser = SlackUser::factory()->create();
+
         Queue::fake();
 
         Carbon::setTestNow('2026-09-05 10:00:00');
@@ -57,7 +63,8 @@ class ChatHistoryPersistenceDispatcherTest extends TestCase
         $this->chatHistoryService->addUserMessage(
             'C_TEST',
             '123.456',
-            'テスト'
+            'テスト',
+            $slackUser->id
         );
 
         Carbon::setTestNow('2026-09-05 10:31:00');
@@ -79,6 +86,8 @@ class ChatHistoryPersistenceDispatcherTest extends TestCase
 
     public function test_active_conversation_job_is_not_dispatched(): void
     {
+        $slackUser = SlackUser::factory()->create();
+
         Queue::fake();
 
         Carbon::setTestNow('2026-09-05 10:00:00');
@@ -86,7 +95,8 @@ class ChatHistoryPersistenceDispatcherTest extends TestCase
         $this->chatHistoryService->addUserMessage(
             'C_TEST',
             '123.456',
-            'テスト'
+            'テスト',
+            $slackUser->id
         );
 
         Carbon::setTestNow('2026-09-05 10:29:00');

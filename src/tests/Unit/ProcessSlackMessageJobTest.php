@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Jobs\ProcessSlackMessageJob;
 use App\Services\ConversationService;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 use Mockery;
+use RuntimeException;
 use Tests\TestCase;
 
 class ProcessSlackMessageJobTest extends TestCase
@@ -31,14 +31,16 @@ class ProcessSlackMessageJobTest extends TestCase
                 'PHPとは？',
                 'C123',
                 '123.456',
-                'Ev123'
+                'Ev123',
+                'U12345678'
             );
 
         $job = new ProcessSlackMessageJob(
             'PHPとは？',
             'C123',
             '123.456',
-            'Ev123'
+            'Ev123',
+            'U12345678'
         );
 
         $job->handle($conversationService);
@@ -56,6 +58,7 @@ class ProcessSlackMessageJobTest extends TestCase
                     'event_id' => 'Ev123',
                     'channel' => 'C123',
                     'thread_ts' => '123.456',
+                    'slack_user_id' => 'U12345678',
                     'message' => 'Unexpected error',
                 ]
             );
@@ -64,7 +67,8 @@ class ProcessSlackMessageJobTest extends TestCase
             'PHPとは？',
             'C123',
             '123.456',
-            'Ev123'
+            'Ev123',
+            'U12345678'
         );
 
         $job->failed(

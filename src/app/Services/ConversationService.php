@@ -11,14 +11,16 @@ class ConversationService
         private readonly ChatHistoryService $chatHistoryService,
         private readonly ConversationHistoryLimiter $historyLimiter,
         private readonly OpenAIService $openAIService,
-        private readonly SlackMessageService $slackMessageService
+        private readonly SlackMessageService $slackMessageService,
+        private readonly SlackUserService $slackUserService,
     ) {}
 
     public function process(
         string $text,
         string $channel,
         string $threadTs,
-        string $eventId
+        string $eventId,
+        string $slackUserId,
     ): void {
         try {
             $message = $this->removeBotMention($text);
@@ -38,10 +40,15 @@ class ConversationService
                 return;
             }
 
+            $slackUser = $this->slackUserService->findOrCreate(
+                $slackUserId
+            );
+
             $this->chatHistoryService->addUserMessage(
                 $channel,
                 $threadTs,
-                $message
+                $message,
+                $slackUser->id
             );
 
             $history = $this->chatHistoryService->getHistory(
