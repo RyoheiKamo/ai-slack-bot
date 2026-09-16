@@ -24,7 +24,8 @@ class ChatHistoryService
      *     id: string,
      *     role: string,
      *     content: string,
-     *     created_at: string
+     *     created_at: string,
+     *     slack_user_id: int|null
      * }>
      *
      * @throws JsonException
@@ -67,6 +68,7 @@ class ChatHistoryService
                 'role' => $decoded['role'],
                 'content' => $decoded['content'],
                 'created_at' => $decoded['created_at'],
+                'slack_user_id' => $decoded['slack_user_id'] ?? null,
             ];
         }
 

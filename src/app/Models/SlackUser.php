@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SlackUser extends Model
 {
@@ -21,4 +22,11 @@ class SlackUser extends Model
         'first_used_at' => 'datetime',
         'last_used_at' => 'datetime',
     ];
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(
+            ConversationMessage::class
+        );
+    }
 }

@@ -45,7 +45,8 @@ class ConversationPersistenceService
                         $message['id'],
                         $message['role'],
                         $message['content'],
-                        $message['created_at']
+                        $message['created_at'],
+                        $message['slack_user_id'] ?? null,
                     );
             }
         });

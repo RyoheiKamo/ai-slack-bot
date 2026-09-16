@@ -11,17 +11,19 @@ class ConversationMessageRepository
         string $messageId,
         string $role,
         string $content,
-        string $messageCreatedAt
-    ): ConversationMessage {
-        return ConversationMessage::firstOrCreate(
+        string $createdAt,
+        ?int $slackUserId = null,
+    ): void {
+        ConversationMessage::firstOrCreate(
             [
                 'message_id' => $messageId,
             ],
             [
                 'conversation_id' => $conversationId,
+                'slack_user_id' => $slackUserId,
                 'role' => $role,
                 'content' => $content,
-                'message_created_at' => $messageCreatedAt,
+                'message_created_at' => $createdAt,
             ]
         );
     }

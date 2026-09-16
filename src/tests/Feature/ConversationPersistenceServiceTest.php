@@ -219,7 +219,8 @@ class ConversationPersistenceServiceTest extends TestCase
         string $id,
         string $role,
         string $content,
-        string $createdAt
+        string $createdAt,
+        ?int $slackUserId = null
     ): void {
         $key = sprintf(
             'slack:chat:%s:%s',
@@ -233,6 +234,7 @@ class ConversationPersistenceServiceTest extends TestCase
                 'role' => $role,
                 'content' => $content,
                 'created_at' => $createdAt,
+                'slack_user_id' => $slackUserId,
             ],
             JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
         );
@@ -326,6 +328,36 @@ class ConversationPersistenceServiceTest extends TestCase
         $this->assertSame(
             'DB保存失敗テスト',
             $historyAfter[0]['content']
+        );
+    }
+
+    public function test_slack_user_id_is_persisted_with_user_message(): void
+    {
+        $slackUser = \App\Models\SlackUser::factory()->create();
+
+        $messageId = '22222222-2222-4222-8222-222222222222';
+
+        $this->pushMessageDirectlyToRedis(
+            $messageId,
+            'user',
+            'Slackユーザー紐付けテスト',
+            '2026-09-16T10:00:00+09:00',
+            $slackUser->id
+        );
+
+        $this->service->persist(
+            $this->channel,
+            $this->threadTs
+        );
+
+        $this->assertDatabaseHas(
+            'conversation_messages',
+            [
+                'message_id' => $messageId,
+                'role' => 'user',
+                'content' => 'Slackユーザー紐付けテスト',
+                'slack_user_id' => $slackUser->id,
+            ]
         );
     }
 }

@@ -9,6 +9,7 @@ class ConversationMessage extends Model
 {
     protected $fillable = [
         'conversation_id',
+        'slack_user_id',
         'message_id',
         'role',
         'content',
@@ -21,6 +22,15 @@ class ConversationMessage extends Model
 
     public function conversation(): BelongsTo
     {
-        return $this->belongsTo(Conversation::class);
+        return $this->belongsTo(
+            Conversation::class
+        );
+    }
+
+    public function slackUser(): BelongsTo
+    {
+        return $this->belongsTo(
+            SlackUser::class
+        );
     }
 }
