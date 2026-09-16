@@ -19,11 +19,11 @@ class ProcessSlackMessageJob implements ShouldQueue
     public array $backoff = [5, 15, 30];
 
     public function __construct(
-        private readonly string $text,
-        private readonly string $channel,
-        private readonly string $threadTs,
-        private readonly string $eventId,
-        private readonly string $slackUserId
+        public readonly string $text,
+        public readonly string $channel,
+        public readonly string $threadTs,
+        public readonly string $eventId,
+        public readonly string $slackUserId
     ) {}
 
     public function handle(ConversationService $conversationService): void

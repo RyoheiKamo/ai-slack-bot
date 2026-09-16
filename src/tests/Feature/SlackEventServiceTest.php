@@ -52,8 +52,12 @@ class SlackEventServiceTest extends TestCase
 
         Bus::assertDispatched(
             ProcessSlackMessageJob::class,
-            function (ProcessSlackMessageJob $job) {
-                return true;
+            function (ProcessSlackMessageJob $job): bool {
+                return $job->text === '<@U999> PHPとは？'
+                    && $job->channel === 'C123'
+                    && $job->threadTs === '123.456'
+                    && $job->eventId === 'Ev123'
+                    && $job->slackUserId === 'U123';
             }
         );
     }

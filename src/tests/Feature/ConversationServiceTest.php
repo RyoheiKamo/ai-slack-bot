@@ -351,6 +351,118 @@ class ConversationServiceTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function test_slack_user_id_from_service_is_passed_to_chat_history(): void
+    {
+        $text = '<@U999> PHPとは？';
+        $channel = 'C123';
+        $threadTs = '123.456';
+        $eventId = 'Ev123';
+        $slackUserId = 'U12345678';
+        $slackUserDbId = 10;
+
+        $history = [
+            [
+                'role' => 'user',
+                'content' => 'PHPとは？',
+            ],
+        ];
+
+        $reply = 'PHPはプログラミング言語です。';
+
+        $chatHistoryService = Mockery::mock(
+            ChatHistoryService::class
+        );
+
+        $historyLimiter = Mockery::mock(
+            ConversationHistoryLimiter::class
+        );
+
+        $openAIService = Mockery::mock(
+            OpenAIService::class
+        );
+
+        $slackMessageService = Mockery::mock(
+            SlackMessageService::class
+        );
+
+        $slackUserService = Mockery::mock(
+            SlackUserService::class
+        );
+
+        $slackUser = new SlackUser();
+        $slackUser->id = $slackUserDbId;
+        $slackUser->slack_user_id = $slackUserId;
+
+        $slackUserService
+            ->shouldReceive('findOrCreate')
+            ->once()
+            ->with($slackUserId)
+            ->andReturn($slackUser);
+
+        $chatHistoryService
+            ->shouldReceive('addUserMessage')
+            ->once()
+            ->with(
+                $channel,
+                $threadTs,
+                'PHPとは？',
+                $slackUserDbId
+            );
+
+        $chatHistoryService
+            ->shouldReceive('getHistory')
+            ->once()
+            ->andReturn($history);
+
+        $historyLimiter
+            ->shouldReceive('limit')
+            ->once()
+            ->with($history)
+            ->andReturn($history);
+
+        $openAIService
+            ->shouldReceive('generateReply')
+            ->once()
+            ->with($history)
+            ->andReturn($reply);
+
+        $chatHistoryService
+            ->shouldReceive('addAssistantMessage')
+            ->once()
+            ->with(
+                $channel,
+                $threadTs,
+                $reply
+            );
+
+        $slackMessageService
+            ->shouldReceive('sendMessage')
+            ->once()
+            ->with(
+                $channel,
+                $reply,
+                $threadTs
+            );
+
+        $service = new ConversationService(
+            $chatHistoryService,
+            $historyLimiter,
+            $openAIService,
+            $slackMessageService,
+            $slackUserService
+        );
+
+        $service->process(
+            $text,
+            $channel,
+            $threadTs,
+            $eventId,
+            $slackUserId
+        );
+
+        $this->assertTrue(true);
+    }
+
     private function mockSlackUserService(
         string $slackUserId,
         int $slackUserDbId = 1
