@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchConversationDetail } from "../../api/conversations";
 import type { ConversationDetail } from "../../types/conversation";
 
 export function ConversationDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const location = useLocation();
   const [conversation, setConversation] = useState<ConversationDetail | null>(
     null,
   );
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const from = location.state?.from ?? "/admin/conversations";
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -55,7 +55,7 @@ export function ConversationDetailPage() {
 
   return (
     <main>
-      <button type="button" onClick={() => navigate("/admin/conversations")}>
+      <button type="button" onClick={() => navigate(from)}>
         一覧へ戻る
       </button>
 

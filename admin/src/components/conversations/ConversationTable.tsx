@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { Conversation } from "../../types/conversation";
 
 type Props = {
@@ -7,6 +7,7 @@ type Props = {
 
 export function ConversationTable({ conversations }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (conversations.length === 0) {
     return <p>会話履歴がありません。</p>;
@@ -29,9 +30,15 @@ export function ConversationTable({ conversations }: Props) {
           <tr
             key={conversation.id}
             onClick={() => {
-              navigate(`/admin/conversations/${conversation.id}`);
+              navigate(`/admin/conversations/${conversation.id}`, {
+                state: {
+                  from: location.pathname + location.search,
+                },
+              });
             }}
-            style={{ cursor: "pointer" }}
+            style={{
+              cursor: "pointer",
+            }}
           >
             <td>{conversation.channel}</td>
             <td>{conversation.thread_ts}</td>

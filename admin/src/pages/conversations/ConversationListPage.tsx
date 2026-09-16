@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
-
+import { useSearchParams } from "react-router-dom";
 import { fetchConversations } from "../../api/conversations";
 import { ConversationTable } from "../../components/conversations/ConversationTable";
-
 import type {
   Conversation,
   ConversationListMeta,
 } from "../../types/conversation";
 
 export function ConversationListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Number(searchParams.get("page") ?? "1");
+  const searchChannel = searchParams.get("channel") ?? "";
+  const searchThreadTs = searchParams.get("thread_ts") ?? "";
+  const [channel, setChannel] = useState(searchChannel);
+  const [threadTs, setThreadTs] = useState(searchThreadTs);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [meta, setMeta] = useState<ConversationListMeta | null>(null);
-
-  const [page, setPage] = useState(1);
-
-  const [channel, setChannel] = useState("");
-  const [threadTs, setThreadTs] = useState("");
-
-  const [searchChannel, setSearchChannel] = useState("");
-  const [searchThreadTs, setSearchThreadTs] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,19 +45,36 @@ export function ConversationListPage() {
   }, [page, searchChannel, searchThreadTs]);
 
   const handleSearch = () => {
-    setPage(1);
-    setSearchChannel(channel);
-    setSearchThreadTs(threadTs);
+    const params = new URLSearchParams();
+
+    params.set("page", "1");
+
+    if (channel) {
+      params.set("channel", channel);
+    }
+
+    if (threadTs) {
+      params.set("thread_ts", threadTs);
+    }
+
+    setSearchParams(params);
   };
 
   const handleClear = () => {
     setChannel("");
     setThreadTs("");
 
-    setSearchChannel("");
-    setSearchThreadTs("");
+    setSearchParams({
+      page: "1",
+    });
+  };
 
-    setPage(1);
+  const handlePageChange = (nextPage: number) => {
+    const params = new URLSearchParams(searchParams);
+
+    params.set("page", String(nextPage));
+
+    setSearchParams(params);
   };
 
   if (loading) {
@@ -120,7 +133,9 @@ export function ConversationListPage() {
 
           <button
             type="button"
-            onClick={() => setPage((prev) => prev - 1)}
+            onClick={() => {
+              handlePageChange(page - 1);
+            }}
             disabled={meta.current_page <= 1}
           >
             前へ
@@ -128,7 +143,9 @@ export function ConversationListPage() {
 
           <button
             type="button"
-            onClick={() => setPage((prev) => prev + 1)}
+            onClick={() => {
+              handlePageChange(page + 1);
+            }}
             disabled={meta.current_page >= meta.last_page}
           >
             次へ
