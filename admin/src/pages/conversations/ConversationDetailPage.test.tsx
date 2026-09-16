@@ -116,4 +116,47 @@ describe("ConversationDetailPage", () => {
       }),
     ).toBeInTheDocument();
   });
+
+  it("displays fetch error message when request fails", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: "Internal Server Error",
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      ),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/admin/conversations/1"]}>
+        <Routes>
+          <Route
+            path="/admin/conversations/:id"
+            element={<ConversationDetailPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "エラー",
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("会話履歴詳細の取得に失敗しました。"),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", {
+        name: "一覧へ戻る",
+      }),
+    ).toBeInTheDocument();
+  });
 });
