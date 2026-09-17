@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\SlackUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -24,7 +26,19 @@ class SlackUserApiTest extends TestCase
         $response
             ->assertOk()
             ->assertJsonStructure([
-                'data',
+                'data' => [
+                    '*' => [
+                        'id',
+                        'slack_user_id',
+                        'display_name',
+                        'real_name',
+                        'first_used_at',
+                        'last_used_at',
+                        'message_count',
+                        'created_at',
+                        'updated_at',
+                    ],
+                ],
                 'meta' => [
                     'current_page',
                     'last_page',
@@ -175,5 +189,31 @@ class SlackUserApiTest extends TestCase
                 'data.0.display_name',
                 'ryohei'
             );
+    }
+
+    public function test_slack_user_list_returns_message_count(): void
+    {
+        $slackUser = SlackUser::factory()->create();
+
+        $conversation = Conversation::factory()->create();
+
+        ConversationMessage::factory()
+            ->count(2)
+            ->create([
+                'conversation_id' => $conversation->id,
+                'slack_user_id' => $slackUser->id,
+                'role' => 'user',
+            ]);
+
+        $response = $this->getJson(
+            '/api/admin/slack-users'
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonFragment([
+                'slack_user_id' => $slackUser->slack_user_id,
+                'message_count' => 2,
+            ]);
     }
 }

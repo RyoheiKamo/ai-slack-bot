@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Admin\SlackUserResource;
 use App\Models\SlackUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,8 @@ class SlackUserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = SlackUser::query();
+        $query = SlackUser::query()
+            ->withCount('messages');
 
         if ($request->filled('slack_user_id')) {
             $query->where(
@@ -32,7 +34,9 @@ class SlackUserController extends Controller
             ->paginate(20);
 
         return response()->json([
-            'data' => $slackUsers->items(),
+            'data' => SlackUserResource::collection(
+                $slackUsers->items()
+            ),
             'meta' => [
                 'current_page' => $slackUsers->currentPage(),
                 'last_page' => $slackUsers->lastPage(),
