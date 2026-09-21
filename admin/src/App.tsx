@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ConversationDetailPage } from "./pages/conversations/ConversationDetailPage";
 import { ConversationListPage } from "./pages/conversations/ConversationListPage";
+import SlackUserListPage from "./pages/slack-users/SlackUserListPage";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
           path="/admin/conversations/:id"
           element={<ConversationDetailPage />}
         />
+        <Route path="/admin/slack-users" element={<SlackUserListPage />} />
       </Routes>
     </BrowserRouter>
   );
