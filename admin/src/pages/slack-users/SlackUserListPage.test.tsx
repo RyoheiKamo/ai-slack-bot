@@ -288,4 +288,67 @@ describe("SlackUserListPage", () => {
       expect.any(Object),
     );
   });
+
+  it("clears search conditions", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            data: [],
+            meta: {
+              current_page: 1,
+              last_page: 1,
+              per_page: 20,
+              total: 0,
+            },
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
+      ),
+    );
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          "/admin/slack-users?slack_user_id=U123&display_name=ryohei&page=2",
+        ]}
+      >
+        <SlackUserListPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText("Slack User ID")).toHaveValue("U123");
+
+    expect(screen.getByLabelText("Display Name")).toHaveValue("ryohei");
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "クリア",
+      }),
+    );
+
+    expect(screen.getByLabelText("Slack User ID")).toHaveValue("");
+
+    expect(screen.getByLabelText("Display Name")).toHaveValue("");
+
+    expect(globalThis.fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining("page=1"),
+      expect.any(Object),
+    );
+
+    expect(globalThis.fetch).toHaveBeenLastCalledWith(
+      expect.not.stringContaining("slack_user_id="),
+      expect.any(Object),
+    );
+
+    expect(globalThis.fetch).toHaveBeenLastCalledWith(
+      expect.not.stringContaining("display_name="),
+      expect.any(Object),
+    );
+  });
 });

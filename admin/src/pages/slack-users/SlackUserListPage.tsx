@@ -49,6 +49,17 @@ export default function SlackUserListPage() {
     setSearchParams(params);
   };
 
+  const handleClear = () => {
+    setSlackUserId("");
+    setDisplayName("");
+
+    const params = new URLSearchParams();
+
+    params.set("page", "1");
+
+    setSearchParams(params);
+  };
+
   return (
     <main>
       <h1>Slackユーザー一覧</h1>
@@ -72,6 +83,10 @@ export default function SlackUserListPage() {
 
         <button type="button" onClick={handleSearch}>
           検索
+        </button>
+
+        <button type="button" onClick={handleClear}>
+          クリア
         </button>
       </div>
 
