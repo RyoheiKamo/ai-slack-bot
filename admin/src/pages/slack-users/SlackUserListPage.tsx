@@ -13,16 +13,30 @@ export default function SlackUserListPage() {
   const [slackUsers, setSlackUsers] = useState<SlackUser[]>([]);
   const page = Number(searchParams.get("page") ?? "1");
   const [meta, setMeta] = useState<SlackUserListMeta | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
+
     fetchSlackUsers({
       page,
       slackUserId: appliedSlackUserId,
       displayName: appliedDisplayName,
-    }).then((response) => {
-      setSlackUsers(response.data);
-      setMeta(response.meta);
-    });
+    })
+      .then((response) => {
+        setSlackUsers(response.data);
+        setMeta(response.meta);
+      })
+      .catch(() => {
+        setSlackUsers([]);
+        setMeta(null);
+        setError("Slackユーザー一覧の取得に失敗しました。");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [page, appliedSlackUserId, appliedDisplayName]);
 
   const handleSearch = () => {
@@ -90,32 +104,42 @@ export default function SlackUserListPage() {
         </button>
       </div>
 
-      <SlackUserTable slackUsers={slackUsers} />
+      {loading ? (
+        <p>読み込み中...</p>
+      ) : error ? (
+        <p>{error}</p>
+      ) : slackUsers.length === 0 ? (
+        <p>該当するSlackユーザーがありません。</p>
+      ) : (
+        <>
+          <SlackUserTable slackUsers={slackUsers} />
 
-      {meta && (
-        <div className="pagination">
-          <span>
-            {meta.current_page} / {meta.last_page}
-          </span>
+          {meta && (
+            <div className="pagination">
+              <span>
+                {meta.current_page} / {meta.last_page}
+              </span>
 
-          <div className="pagination-buttons">
-            <button
-              type="button"
-              disabled={meta.current_page <= 1}
-              onClick={() => handlePageChange(meta.current_page - 1)}
-            >
-              前へ
-            </button>
+              <div className="pagination-buttons">
+                <button
+                  type="button"
+                  disabled={meta.current_page <= 1}
+                  onClick={() => handlePageChange(meta.current_page - 1)}
+                >
+                  前へ
+                </button>
 
-            <button
-              type="button"
-              disabled={meta.current_page >= meta.last_page}
-              onClick={() => handlePageChange(meta.current_page + 1)}
-            >
-              次へ
-            </button>
-          </div>
-        </div>
+                <button
+                  type="button"
+                  disabled={meta.current_page >= meta.last_page}
+                  onClick={() => handlePageChange(meta.current_page + 1)}
+                >
+                  次へ
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

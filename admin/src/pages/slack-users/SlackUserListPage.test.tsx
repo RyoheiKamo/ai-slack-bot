@@ -5,39 +5,52 @@ import { describe, expect, it, vi } from "vitest";
 import { formatDateTime } from "../../utils/date";
 import SlackUserListPage from "./SlackUserListPage";
 
+const slackUserData = [
+  {
+    id: 1,
+    slack_user_id: "U12345678",
+    display_name: "ryohei",
+    real_name: "Ryohei Kamo",
+    first_used_at: "2026-09-01T10:00:00+09:00",
+    last_used_at: "2026-09-17T10:00:00+09:00",
+    message_count: 5,
+    created_at: "2026-09-01T10:00:00+09:00",
+    updated_at: "2026-09-17T10:00:00+09:00",
+  },
+];
+
+const createSlackUserResponse = ({
+  data = slackUserData,
+  currentPage = 1,
+  lastPage = 1,
+  total = data.length,
+}: {
+  data?: typeof slackUserData;
+  currentPage?: number;
+  lastPage?: number;
+  total?: number;
+} = {}): Response =>
+  new Response(
+    JSON.stringify({
+      data,
+      meta: {
+        current_page: currentPage,
+        last_page: lastPage,
+        per_page: 20,
+        total,
+      },
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
 describe("SlackUserListPage", () => {
   it("displays slack users", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          data: [
-            {
-              id: 1,
-              slack_user_id: "U12345678",
-              display_name: "ryohei",
-              real_name: "Ryohei Kamo",
-              first_used_at: "2026-09-01T10:00:00+09:00",
-              last_used_at: "2026-09-17T10:00:00+09:00",
-              message_count: 5,
-              created_at: "2026-09-01T10:00:00+09:00",
-              updated_at: "2026-09-17T10:00:00+09:00",
-            },
-          ],
-          meta: {
-            current_page: 1,
-            last_page: 1,
-            per_page: 20,
-            total: 1,
-          },
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(createSlackUserResponse());
 
     render(
       <MemoryRouter>
@@ -65,23 +78,10 @@ describe("SlackUserListPage", () => {
   it("filters by slack user id", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(() =>
       Promise.resolve(
-        new Response(
-          JSON.stringify({
-            data: [],
-            meta: {
-              current_page: 1,
-              last_page: 1,
-              per_page: 20,
-              total: 0,
-            },
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
+        createSlackUserResponse({
+          data: [],
+          total: 0,
+        }),
       ),
     );
 
@@ -110,23 +110,10 @@ describe("SlackUserListPage", () => {
   it("filters by display name", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(() =>
       Promise.resolve(
-        new Response(
-          JSON.stringify({
-            data: [],
-            meta: {
-              current_page: 1,
-              last_page: 1,
-              per_page: 20,
-              total: 0,
-            },
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
+        createSlackUserResponse({
+          data: [],
+          total: 0,
+        }),
       ),
     );
 
@@ -155,23 +142,11 @@ describe("SlackUserListPage", () => {
   it("moves to next page", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(() =>
       Promise.resolve(
-        new Response(
-          JSON.stringify({
-            data: [],
-            meta: {
-              current_page: 1,
-              last_page: 3,
-              per_page: 20,
-              total: 50,
-            },
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
+        createSlackUserResponse({
+          currentPage: 1,
+          lastPage: 3,
+          total: 50,
+        }),
       ),
     );
 
@@ -196,23 +171,11 @@ describe("SlackUserListPage", () => {
   it("moves to previous page", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(() =>
       Promise.resolve(
-        new Response(
-          JSON.stringify({
-            data: [],
-            meta: {
-              current_page: 2,
-              last_page: 3,
-              per_page: 20,
-              total: 50,
-            },
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
+        createSlackUserResponse({
+          currentPage: 2,
+          lastPage: 3,
+          total: 50,
+        }),
       ),
     );
 
@@ -237,23 +200,11 @@ describe("SlackUserListPage", () => {
   it("keeps search conditions when moving to next page", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(() =>
       Promise.resolve(
-        new Response(
-          JSON.stringify({
-            data: [],
-            meta: {
-              current_page: 1,
-              last_page: 3,
-              per_page: 20,
-              total: 50,
-            },
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
+        createSlackUserResponse({
+          currentPage: 1,
+          lastPage: 3,
+          total: 50,
+        }),
       ),
     );
 
@@ -292,23 +243,10 @@ describe("SlackUserListPage", () => {
   it("clears search conditions", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(() =>
       Promise.resolve(
-        new Response(
-          JSON.stringify({
-            data: [],
-            meta: {
-              current_page: 1,
-              last_page: 1,
-              per_page: 20,
-              total: 0,
-            },
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
+        createSlackUserResponse({
+          data: [],
+          total: 0,
+        }),
       ),
     );
 
@@ -350,5 +288,72 @@ describe("SlackUserListPage", () => {
       expect.not.stringContaining("display_name="),
       expect.any(Object),
     );
+  });
+
+  it("shows loading state while fetching", async () => {
+    let resolveFetch!: (response: Response) => void;
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+
+    render(
+      <MemoryRouter>
+        <SlackUserListPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("読み込み中...")).toBeInTheDocument();
+
+    resolveFetch(
+      createSlackUserResponse({
+        data: [],
+        total: 0,
+      }),
+    );
+
+    expect(
+      await screen.findByText("該当するSlackユーザーがありません。"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows error message when fetching fails", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, {
+        status: 500,
+      }),
+    );
+
+    render(
+      <MemoryRouter>
+        <SlackUserListPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText("Slackユーザー一覧の取得に失敗しました。"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows empty message when no slack users are found", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      createSlackUserResponse({
+        data: [],
+        total: 0,
+      }),
+    );
+
+    render(
+      <MemoryRouter>
+        <SlackUserListPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText("該当するSlackユーザーがありません。"),
+    ).toBeInTheDocument();
   });
 });
