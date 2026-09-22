@@ -11,6 +11,7 @@ class ConversationService
         private readonly ChatHistoryService $chatHistoryService,
         private readonly ConversationHistoryLimiter $historyLimiter,
         private readonly OpenAIService $openAIService,
+        private readonly SlackChannelService $slackChannelService,
         private readonly SlackMessageService $slackMessageService,
         private readonly SlackUserService $slackUserService,
     ) {}
@@ -42,6 +43,10 @@ class ConversationService
 
             $slackUser = $this->slackUserService->findOrCreate(
                 $slackUserId
+            );
+
+            $this->slackChannelService->findOrCreate(
+                $channel
             );
 
             $this->chatHistoryService->addUserMessage(
